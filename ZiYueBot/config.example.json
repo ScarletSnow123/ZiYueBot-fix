@@ -1,7 +1,7 @@
 {
   "QqEventEndpoint": "ws://127.0.0.1:3001",
   "QqEventAuthenticate": "",
-  "QqApiEndpoint": "ws://127.0.0.1:3001",
+  "QqApiEndpoint": "ws://127.0.0.1:3002",
   "QqApiAuthenticate": "",
   "DatabaseSource": "127.0.0.1",
   "DatabasePort": 3306,
