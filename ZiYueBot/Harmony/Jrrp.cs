@@ -1,4 +1,4 @@
-﻿using log4net;
+using log4net;
 using System.Security.Cryptography;
 using System.Text;
 using ZiYueBot.Core;
@@ -41,7 +41,7 @@ public class Jrrp : Command
     public override async Task Invoke(Context context, MessageChain arg)
     {
         Logger.Info($"调用者：{context.UserName} ({context.UserId})");
-        _ =UpdateInvokeRecords(context.UserId);
+        _ = UpdateInvokeRecords(context.UserId);
 
         if (DateTime.Today.Month == 4 && DateTime.Today.Day == 1) // 愚人节！
         {
@@ -52,7 +52,7 @@ public class Jrrp : Command
         StringBuilder builder = new StringBuilder();
         builder.Append(context.UserId).Append(DateTime.Today.ToBinary()).Append(42);
         byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
-        int luck = Math.Abs(BitConverter.ToInt32(bytes, 0)) % 101;
+        int luck = (int)(BitConverter.ToUInt32(bytes, 0) % 101);
         string comment = Jackpots.TryGetValue(luck, out string? value)
             ? value
             : Levels.Last(level => level.Key <= luck).Value;

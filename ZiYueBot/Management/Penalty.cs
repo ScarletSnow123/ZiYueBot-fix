@@ -15,7 +15,7 @@ public class Penalty : PrivilegeCommand
     public override string Summary => "管理命令";
 
     public override string Description => """
-                                          /记过 [user] [reason]（管理命令）
+                                          /sudo 记过 [user] [reason]（管理命令）
                                           记录特定用户的违规记录。需要 CreatePenalty 特权。
                                           在线文档：https://docs.ziyuebot.cn/techical/manangement/penalty
                                           """;
@@ -42,7 +42,7 @@ public class Penalty : PrivilegeCommand
         ulong targetUserId = ping.UserId;
         ulong channelId = context.Platform == Platform.QQ
             ? ((QqContext)context).SourceUni
-            : ((DiscordContext)context).Socket.GuildId!.Value;
+            : ((DiscordContext)context).Socket.GuildId ?? 0;
         arg.RemoveAt(0);
         string reason = arg.ToString(context).Trim();
         await using MySqlCommand command =

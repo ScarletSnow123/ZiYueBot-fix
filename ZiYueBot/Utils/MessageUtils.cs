@@ -45,6 +45,6 @@ public static partial class MessageUtils
         return builder.ToString();
     }
 
-    [GeneratedRegex("<@(\\d+)*>")]
+    [GeneratedRegex("<@(\\d+)>")]
     public static partial Regex DiscordPingRegex();
 }

@@ -1,10 +1,10 @@
-using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using ZiYueBot.Core;
+using ZiYueBot.Utils;
 
 namespace ZiYueBot.QQ;
 
@@ -62,7 +62,7 @@ public class QqContext(EventType eventType, string userName, ulong userId, uint 
                 _ => throw new InvalidDataException("未知消息实体类型")
             };
         });
-        Thread.Sleep(Random.Shared.Next(500, 1500));
+        await Task.Delay(Random.Shared.Next(500, 1500));
         await SendApiRequest(new JsonObject
         {
             ["action"] = EventType == EventType.DirectMessage ? "send_private_msg" : "send_group_msg",
@@ -124,38 +124,50 @@ public class QqContext(EventType eventType, string userName, ulong userId, uint 
         return message;
     }
 
+    // OneBot 的 API WebSocket 在同一时间只能处理一个请求。并发调用会导致响应串线
+    // （A 请求收到 B 的结果），因此这里串行化所有 API 调用。
+    private static readonly SemaphoreSlim ApiRequestLock = new(1, 1);
+
+    internal static SemaphoreSlim ApiLock => ApiRequestLock;
+
     internal static async Task<JsonNode> SendApiRequest(JsonObject json)
     {
-        for (int i = 0; i < 3; i++)
+        await ApiRequestLock.WaitAsync();
+        try
         {
-            byte[] buffer = ArrayPool<byte>.Shared.Rent(4096);
-            try
+            Exception? lastError = null;
+            for (int i = 0; i < 3; i++)
             {
-                ArraySegment<byte> bytesToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(
-                    json.ToJsonString(new JsonSerializerOptions
-                        { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping })));
-                await ZiYueBot.Instance.QqApi.SendAsync(bytesToSend, WebSocketMessageType.Text, true,
-                    CancellationToken.None);
-                StringBuilder builder = new StringBuilder();
-                WebSocketReceiveResult result;
-                do
+                using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30));
+                try
                 {
-                    result = await ZiYueBot.Instance.QqApi.ReceiveAsync(new ArraySegment<byte>(buffer),
-                        CancellationToken.None);
-                    string chunk = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                    builder.Append(chunk);
-                } while (!result.EndOfMessage);
+                    byte[] payload = Encoding.UTF8.GetBytes(json.ToJsonString(new JsonSerializerOptions
+                        { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
 
-                JsonNode? response = JsonNode.Parse(builder.ToString());
-                if (response is not null) return response;
+                    await ZiYueBot.Instance.QqApi.SendAsync(payload, WebSocketMessageType.Text, true,
+                        timeout.Token);
+
+                    string response = await ZiYueBot.Instance.QqApi.ReceiveTextMessageAsync(timeout.Token);
+                    JsonNode? node = JsonNode.Parse(response);
+                    if (node is not null) return node;
+
+                    lastError = new InvalidDataException("QQ API 空响应");
+                }
+                catch (Exception e) when (e is WebSocketException or IOException or JsonException
+                                              or InvalidOperationException or OperationCanceledException)
+                {
+                    lastError = e;
+                }
+
+                if (i < 2) await Task.Delay(200);
             }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(buffer);
-            }
+
+            QqEvents.Logger.Error($"API 请求失败：{json}", lastError);
+            throw new HttpRequestException("QQ API 请求失败", lastError);
         }
-
-        QqEvents.Logger.Error($"API 请求失败：{json}");
-        throw new HttpRequestException();
+        finally
+        {
+            ApiRequestLock.Release();
+        }
     }
 }

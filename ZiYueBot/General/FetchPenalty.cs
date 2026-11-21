@@ -39,7 +39,9 @@ public class FetchPenalty : Command
         _ = UpdateInvokeRecords(context.UserId);
 
         ulong userId = arg.Count > 0 ? ((PingMessageEntity)arg[0]).UserId : context.UserId;
-        ulong channelId = context is QqContext qq ? qq.SourceUni : ((DiscordContext)context).Socket.GuildId!.Value;
+        ulong channelId = context is QqContext qq
+            ? qq.SourceUni
+            : ((DiscordContext)context).Socket.GuildId ?? 0;
         int penaltyCount = 0;
         string penalty = "\n";
         await using (MySqlCommand query = new MySqlCommand(
@@ -87,8 +89,9 @@ public class FetchPenalty : Command
             publicPenalty = publicPenalty[..^1];
         }
 
+        string targetName = await context.FetchUserName(userId);
         await context.SendMessage($"""
-                                   {context.FetchUserName(userId).Result} ({userId}) 的记过数据统计：
+                                   {targetName} ({userId}) 的记过数据统计：
                                    {(penaltyCount == 0 ? "该用户没有全局记过记录" : $"该用户共有全局记过 {penaltyCount} 条{penalty}")}
                                    {(publicPenaltyCount == 0 ? "该用户没有本群记过记录" : $"该用户共有本群记过 {publicPenaltyCount} 条{publicPenalty}")}
                                    {(publicPenaltyCount > 50 ? "- 本群记过过多，请查看网页版完整数据。" : "")}

@@ -94,7 +94,7 @@ public class Win : Command
 
     private static string GetReview(int level)
     {
-        return Reviews[level][Random.Shared.Next(0, Reviews[level].Count - 1)];
+        return Reviews[level][Random.Shared.Next(Reviews[level].Count)];
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ public class Win : Command
         Logger.Info($"调用者：{context.UserName} ({context.UserId})");
 
         ulong guildId = context.Platform == Platform.Discord
-            ? (ulong)((DiscordContext)context).Socket.GuildId!
+            ? ((DiscordContext)context).Socket.GuildId ?? 0
             : ((QqContext)context).SourceUni;
 
         await GeneralWin(context, guildId);
@@ -298,12 +298,19 @@ public class Win : Command
         );
         await using MySqlDataReader reader = query.ExecuteReader();
         if (!reader.Read()) return;
+
+        string otherUserName = reader.GetString("username");
+        long otherUserId = reader.GetInt64("userid");
+        await reader.CloseAsync();
+
         await using MySqlCommand recordsUpdateQuery =
             new MySqlCommand(
-                $"UPDATE win SET couple_win_days = couple_win_days + 1 WHERE (userid = {context.UserId} OR userid = {reader.GetInt64("userid")}) AND channel = {guildId}");
+                $"UPDATE win SET couple_win_days = couple_win_days + 1 WHERE (userid = {context.UserId} OR userid = {otherUserId}) AND channel = {guildId}",
+                database);
+        await recordsUpdateQuery.ExecuteNonQueryAsync();
 
         await context.SendMessage($"""
-                                   恭喜 {context.UserName} 与 {reader.GetString("username")} 的赢级之和达到 99，实现心心相 win！
+                                   恭喜 {context.UserName} 与 {otherUserName} 的赢级之和达到 99，实现心心相 win！
                                    愿你们永结同心，在未来的日子里风雨同舟、携手共赢！
                                    """);
         await context.SendMessage([

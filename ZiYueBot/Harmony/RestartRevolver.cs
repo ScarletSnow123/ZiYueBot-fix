@@ -49,7 +49,7 @@ public class RestartRevolver : Command
         }
 
         _ = StartRevolver.UpdateRevolverRecords(context.UserId, "restart_count");
-        Interlocked.Exchange(ref round.ChamberIndex, Random.Shared.Next(1, RevolverRound.Chambers - 1));
+        Interlocked.Exchange(ref round.ChamberIndex, Random.Shared.Next(1, RevolverRound.Chambers + 1));
         await context.SendMessage("轮盘已重新旋转");
     }
 }

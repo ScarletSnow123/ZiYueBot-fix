@@ -24,7 +24,14 @@ public class AddStargazer : Command
             return;
         }
 
-        Stargazers.AddStargazer(context.UserId, context.UserName, int.Parse(arg.ToString(context)), false);
+        if (arg.Count != 1 || arg[0] is not TextMessageEntity text || !int.TryParse(text.Text, out int bottleId))
+        {
+            await context.SendMessage("参数无效。使用“/help 添加星标”查看命令用法。");
+            return;
+        }
+
+        string result = Stargazers.AddStargazer(context.UserId, context.UserName, bottleId, false);
+        if (!string.IsNullOrEmpty(result)) await context.SendMessage(result);
     }
 
     public override TimeSpan GetRateLimit(Context context)

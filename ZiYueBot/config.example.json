@@ -1,0 +1,21 @@
+{
+  "QqEventEndpoint": "ws://127.0.0.1:3001",
+  "QqEventAuthenticate": "",
+  "QqApiEndpoint": "ws://127.0.0.1:3001",
+  "QqApiAuthenticate": "",
+  "DatabaseSource": "127.0.0.1",
+  "DatabasePort": 3306,
+  "DatabaseName": "ziyuebot",
+  "DatabaseUser": "ziyuebot",
+  "DatabasePassword": "",
+  "DiscordToken": "",
+  "DiscordProxy": "",
+  "ChatAgentEndpoint": "",
+  "BailianApiEndpoint": "",
+  "BailianApiKey": "",
+  "AssetsEndpoint": "",
+  "AssetsUploadRegion": "",
+  "AssetsUploadBucket": "",
+  "AssetsUploadSecretId": "",
+  "AssetsUploadSecretKey": ""
+}

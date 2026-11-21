@@ -50,6 +50,12 @@ public class Quotations : Command
         Logger.Info($"调用者：{context.UserName} ({context.UserId})");
         _ = UpdateInvokeRecords(context.UserId);
 
-        await context.SendMessage(Quotes[Random.Shared.Next(0, Quotes.Count - 1)]);
+        if (Quotes.Count == 0)
+        {
+            await context.SendMessage("语录库为空。");
+            return;
+        }
+
+        await context.SendMessage(Quotes[Random.Shared.Next(Quotes.Count)]);
     }
 }

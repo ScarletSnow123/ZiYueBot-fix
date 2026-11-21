@@ -48,34 +48,61 @@ public class MessageChain : List<IMessageEntity>
 
         MessageChain chain = [];
         int pos = 0;
-        for (int i = 0; i < message.Length; i++)
+        while (pos < message.Length)
         {
-            switch (message[i])
+            int localStart = message.IndexOf('\u2408', pos);
+            int remoteStart = message.IndexOf('\uE000', pos);
+            int start = localStart switch
             {
-                case '\u2408': // 本地图片
-                {
-                    chain.Add(new TextMessageEntity(message.Substring(pos, i - pos - (pos == 0 ? 0 : 1))));
-                    int end = message.IndexOf('\u2409', i + 1);
-                    chain.Add(ImageMessageEntity.FromPath(message.Substring(i + 1, end - i - 1)));
-                    i = pos = end;
-                    continue;
-                }
-                case '\uE000': // 远程图片
-                {
-                    chain.Add(new TextMessageEntity(message.Substring(pos, i - pos - (pos == 0 ? 0 : 1))));
-                    int end = message.IndexOf('\uE001', i + 1);
-                    string path = message.Substring(i + 1, end - i - 1);
-                    string filename = path[path.LastIndexOf('/')..];
-                    chain.Add(new ImageMessageEntity(path, filename));
-                    i = pos = end;
-                    continue;
-                }
+                < 0 => remoteStart,
+                _ when remoteStart < 0 => localStart,
+                _ => Math.Min(localStart, remoteStart)
+            };
+
+            if (start < 0)
+            {
+                AddText(chain, message[pos..]);
+                break;
             }
+
+            if (start > pos) AddText(chain, message[pos..start]);
+
+            bool isLocal = message[start] == '\u2408';
+            char endMarker = isLocal ? '\u2409' : '\uE001';
+            int end = message.IndexOf(endMarker, start + 1);
+            if (end < 0)
+            {
+                // 数据不完整时保留剩余内容，避免把整条消息吞掉。
+                AddText(chain, message[start..]);
+                break;
+            }
+
+            string path = message[(start + 1)..end];
+            if (isLocal)
+            {
+                chain.Add(ImageMessageEntity.FromPath(path));
+            }
+            else
+            {
+                chain.Add(new ImageMessageEntity(path, GetFileName(path)));
+            }
+
+            pos = end + 1;
         }
 
-        if (pos < message.Length - 1)
-            chain.Add(new TextMessageEntity(message[(pos + (message[pos + 1] == ' ' ? 2 : 1))..]));
         return chain;
+    }
+
+    private static void AddText(MessageChain chain, string text)
+    {
+        if (text.Length > 0) chain.Add(new TextMessageEntity(text));
+    }
+
+    private static string GetFileName(string path)
+    {
+        int separator = Math.Max(path.LastIndexOf('/'), path.LastIndexOf('\\'));
+        string fileName = separator < 0 ? path : path[(separator + 1)..];
+        return string.IsNullOrEmpty(fileName) ? "image" : fileName;
     }
 }
 
@@ -129,8 +156,9 @@ public record ImageMessageEntity(string Path, string FileName) : IMessageEntity
     {
         byte[] imageBytes = File.ReadAllBytes(path);
         string base64String = Convert.ToBase64String(imageBytes);
-        string filename = path[path.LastIndexOf('/')..];
-        return new ImageMessageEntity($"base64://{base64String}", filename);
+        int separator = Math.Max(path.LastIndexOf('/'), path.LastIndexOf('\\'));
+        string filename = separator < 0 ? path : path[(separator + 1)..];
+        return new ImageMessageEntity($"base64://{base64String}", string.IsNullOrEmpty(filename) ? "image" : filename);
     }
 }
 

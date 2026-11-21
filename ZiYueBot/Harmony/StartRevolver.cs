@@ -25,7 +25,7 @@ public class RevolverRound
     /// <summary>
     /// 子弹所在膛室
     /// </summary>
-    public readonly int BulletPos = Random.Shared.Next(1, Chambers);
+    public readonly int BulletPos = Random.Shared.Next(1, Chambers + 1);
 
     /// <summary>
     /// 本局开始时间

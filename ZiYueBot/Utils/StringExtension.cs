@@ -20,7 +20,7 @@ public static class StringExtension
 
     public static string FirstLine(this string str)
     {
-        int index = Math.Min(str.IndexOf('\r'), str.IndexOf('\n'));
+        int index = str.IndexOfAny(['\r', '\n']);
         return index == -1 ? str : str[..index];
     }
 }

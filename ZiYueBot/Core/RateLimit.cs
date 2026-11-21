@@ -1,11 +1,13 @@
-﻿namespace ZiYueBot.Core;
+using System.Collections.Concurrent;
+
+namespace ZiYueBot.Core;
 
 /// <summary>
 /// 频率限制相关。
 /// </summary>
 public static class RateLimit
 {
-    private static readonly Dictionary<(string, ulong userId), DateTime> LastInvoke = [];
+    private static readonly ConcurrentDictionary<(string, ulong userId), DateTime> LastInvoke = new();
 
     /// <summary>
     /// 尝试通过频率限制检查。如果通过，该函数会自动记录最后一次调用为现在时间。
@@ -22,10 +24,20 @@ public static class RateLimit
     public static bool TryPassRateLimit(string key, ulong userId, TimeSpan rateLimit)
     {
         if (Privileged.HasPrivilege(userId, Privilege.BypassRateLimit)) return true;
-        DateTime last = LastInvoke.GetValueOrDefault((key, userId), DateTime.MinValue);
+
+        (string, ulong) mapKey = (key, userId);
         DateTime now = DateTime.UtcNow;
-        if (now - last < rateLimit) return false;
-        LastInvoke[(key, userId)] = now;
-        return true;
+
+        while (true)
+        {
+            if (!LastInvoke.TryGetValue(mapKey, out DateTime last))
+            {
+                if (LastInvoke.TryAdd(mapKey, now)) return true;
+                continue;
+            }
+
+            if (now - last < rateLimit) return false;
+            if (LastInvoke.TryUpdate(mapKey, now, last)) return true;
+        }
     }
 }

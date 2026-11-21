@@ -1,5 +1,5 @@
-﻿using System.Net.WebSockets;
-using System.Text;
+using System.Net.WebSockets;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using log4net;
@@ -12,7 +12,6 @@ namespace ZiYueBot.QQ;
 public static class QqEvents
 {
     internal static readonly ILog Logger = LogManager.GetLogger("QQ 消息解析");
-    private static readonly byte[] MessageBuffer = new byte[4096];
 
     public static async Task Initialize()
     {
@@ -20,24 +19,18 @@ public static class QqEvents
         {
             try
             {
-                StringBuilder builder = new StringBuilder();
-                WebSocketReceiveResult result;
-                do
-                {
-                    result = await ZiYueBot.Instance.QqEvent.ReceiveAsync(new ArraySegment<byte>(MessageBuffer),
-                        CancellationToken.None);
-                    string chunk = Encoding.UTF8.GetString(MessageBuffer, 0, result.Count);
-                    builder.Append(chunk);
-                } while (!result.EndOfMessage);
+                string payload = await ZiYueBot.Instance.QqEvent.ReceiveTextMessageAsync();
+                JsonNode? message = JsonNode.Parse(payload);
+                if (message?["user_id"] is null) continue;
 
-                JsonNode? message = JsonNode.Parse(builder.ToString());
-                uint userId = message!["user_id"]!.GetValue<uint>();
+                uint userId = message["user_id"]!.GetValue<uint>();
 
                 // 检查云瓶星标
                 if (message["notice_type"]?.ToString() == "group_msg_emoji_like" &&
-                    message["sub_type"]!.GetValue<string>() == "add")
+                    message["sub_type"]?.ToString() == "add" &&
+                    message["likes"] is JsonArray { Count: > 0 } likes)
                 {
-                    string emoji = message["likes"]![0]!["emoji_id"]!.ToString();
+                    string emoji = likes[0]!["emoji_id"]!.ToString();
                     if (emoji is "128077" or "76")
                     {
                         JsonNode response = await QqContext.SendApiRequest(new JsonObject
@@ -91,12 +84,19 @@ public static class QqEvents
             }
             catch (NullReferenceException)
             {
+                // 部分事件没有完整的消息字段，忽略即可。
+            }
+            catch (JsonException e)
+            {
+                Logger.Debug("QQ 事件 JSON 解析失败", e);
             }
             catch (Exception e)
             {
                 Logger.Error(e.Message, e);
             }
         }
+
+        Logger.Warn("QQ 事件循环停止");
     }
 
     /// <summary>
@@ -109,7 +109,7 @@ public static class QqEvents
             MessageChain chain = Parser.ParseMessage(node, out MessageChain? forwardMessage, context);
 
             // 以下为 SnowLuma 回复消息结构的特殊处理
-            if (forwardMessage is not null && chain.First() is PingMessageEntity && chain.Count > 2)
+            if (forwardMessage is not null && chain.Count > 2 && chain[0] is PingMessageEntity)
             {
                 chain.RemoveAt(0);
                 chain.RemoveAt(0);
@@ -139,6 +139,7 @@ public static class QqEvents
                 explicitInvoke = true;
             }
 
+            if (chain.IsEmpty()) return;
             if (chain[0] is not TextMessageEntity line) return;
 
             string commandName =
@@ -187,9 +188,24 @@ public static class QqEvents
         }
         catch (HttpRequestException)
         {
-            await context.SendMessage("与 QQ 通讯失败。");
-            await ZiYueBot.Instance.ReconnectQqWebSocketAsync();
-            Logger.Info("已重新建立与 QQ 的连接");
+            try
+            {
+                await context.SendMessage("与 QQ 通讯失败。");
+            }
+            catch (Exception e)
+            {
+                Logger.Debug("QQ 通讯失败提示发送失败", e);
+            }
+
+            try
+            {
+                await ZiYueBot.Instance.ReconnectQqWebSocketAsync();
+                Logger.Info("QQ 已重连");
+            }
+            catch (Exception e)
+            {
+                Logger.Error("QQ 重连失败", e);
+            }
         }
         catch (Exception ex)
         {

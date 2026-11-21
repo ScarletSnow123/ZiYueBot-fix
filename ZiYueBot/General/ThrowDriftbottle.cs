@@ -60,7 +60,7 @@ public partial class ThrowDriftbottle : Command
         await using MySqlCommand command =
             new MySqlCommand(
                 $"""
-                 INSERT INTO {(privileged ? "driftbottles" : " driftbottles_queue")}(userid, username, created, content) 
+                 INSERT INTO {(privileged ? "driftbottles" : "driftbottles_queue")}(userid, username, created, content) 
                  VALUE (@userid, @username, now(), @content)
                  """,
                 ZiYueBot.Instance.ConnectDatabase());

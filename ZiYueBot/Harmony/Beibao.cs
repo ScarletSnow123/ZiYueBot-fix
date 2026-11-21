@@ -37,6 +37,12 @@ public class Beibao : Command
         Logger.Info($"调用者：{context.UserName} ({context.UserId})，参数：{arg.Flatten()}");
         _ = UpdateInvokeRecords(context.UserId);
 
+        if (!arg.IsLiteralString())
+        {
+            await context.SendMessage("请输入纯文字参数。");
+            return;
+        }
+
         await context.SendMessage([
             new ImageMessageEntity(
                 $"base64://{Convert.ToBase64String(Xibao.Render(false, arg.ToString(context)))}",

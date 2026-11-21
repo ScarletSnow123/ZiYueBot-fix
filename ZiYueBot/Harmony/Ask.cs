@@ -72,21 +72,27 @@ public class Ask : Command
         Logger.Info($"调用者：{context.UserName} ({context.UserId})，参数：{arg.Flatten()}");
         _ = UpdateInvokeRecords(context.UserId);
 
-        if (DateTime.Today.Month == 4 && DateTime.Today.Day == 1)
+        if (DateTime.Today.Month == 4 && DateTime.Today.Day == 1 && AprilReviews.Count > 0)
         {
-            (string, List<string>) aprilReview = AprilReviews[Random.Shared.Next(0, AprilReviews.Count)];
+            (string, List<string>) aprilReview = AprilReviews[Random.Shared.Next(AprilReviews.Count)];
             if (arg.IsEmpty())
                 await context.SendMessage(
-                    $"{aprilReview.Item1}的评价是：{aprilReview.Item2[Random.Shared.Next(0, aprilReview.Item2.Count - 1)]}");
+                    $"{aprilReview.Item1}的评价是：{aprilReview.Item2[Random.Shared.Next(aprilReview.Item2.Count)]}");
             else
                 await context.SendMessage($"{aprilReview.Item1}对 " + arg +
-                                          $" 的评价是：{aprilReview.Item2[Random.Shared.Next(0, aprilReview.Item2.Count - 1)]}");
+                                          $" 的评价是：{aprilReview.Item2[Random.Shared.Next(aprilReview.Item2.Count)]}");
+            return;
+        }
+
+        if (Reviews.Count == 0)
+        {
+            await context.SendMessage("语录库加载失败。");
             return;
         }
 
         if (arg.IsEmpty())
-            await context.SendMessage($"张教授的评价是：{Reviews[Random.Shared.Next(0, Reviews.Count - 1)]}");
+            await context.SendMessage($"张教授的评价是：{Reviews[Random.Shared.Next(Reviews.Count)]}");
         else
-            await context.SendMessage("张教授对 " + arg + $" 的评价是：{Reviews[Random.Shared.Next(0, Reviews.Count - 1)]}");
+            await context.SendMessage("张教授对 " + arg + $" 的评价是：{Reviews[Random.Shared.Next(Reviews.Count)]}");
     }
 }

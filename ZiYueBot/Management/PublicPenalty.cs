@@ -48,7 +48,7 @@ public class PublicPenalty : Command
         ulong targetUserId = ping.UserId;
         ulong channelId = context.Platform == Platform.QQ
             ? ((QqContext)context).SourceUni
-            : ((DiscordContext)context).Socket.GuildId!.Value;
+            : ((DiscordContext)context).Socket.GuildId ?? 0;
         arg.RemoveAt(0);
         string reason = arg.ToString(context).Trim();
         await using MySqlCommand command =

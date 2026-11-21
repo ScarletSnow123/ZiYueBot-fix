@@ -31,6 +31,6 @@ features:
     details: 子悦机器不依赖任何机器人框架。
     icon: 🛡️
   - title: 高度定制
-    details: 安装子悦机器时 <b>必须</b> 配置 QQ 和 Discord 双平台，且 Discord <b>必须</b> 配置网络代理。
+    details: 安装子悦机器时只需配置 QQ；Discord 为可选平台，Discord 代理同样可选。
     icon: 🛠️
 ---

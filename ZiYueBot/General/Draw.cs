@@ -123,7 +123,7 @@ public class Draw : Command
                                                             },
                                                             "parameters": {
                                                                 "negative_prompt": "",
-                                                                "size": "1536*1536",
+                                                                "size": "1024*1024",
                                                                 "prompt_extend": false,
                                                                 "n": 1
                                                             }

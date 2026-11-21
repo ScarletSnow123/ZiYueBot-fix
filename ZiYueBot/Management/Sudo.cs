@@ -46,7 +46,7 @@ public class Sudo : Command
     protected static async Task WriteLog(ulong userId, string command, Result result)
     {
         await using MySqlCommand query = new MySqlCommand(
-            $"INSERT INTO sudo_logs VALUE(now(), {userId}, @command, '{result:G}')",
+            $"INSERT INTO sudo_logs VALUE(now(), {userId}, @command, '{result.ToString().ToLowerInvariant()}')",
             ZiYueBot.Instance.ConnectDatabase());
         query.Parameters.AddWithValue("@command", command);
         await query.ExecuteNonQueryAsync();

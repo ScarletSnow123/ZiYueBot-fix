@@ -102,9 +102,10 @@ public class PickDriftbottle : Command
             return;
         }
 
-        int stargazers = Stargazers.GetStargazerCount(id);
+        int bottleId = reader.GetInt32("id");
+        int stargazers = Stargazers.GetStargazerCount(bottleId);
         string result = $"""
-                         你捞到了 {reader.GetInt32("id")} 号瓶子！
+                         你捞到了 {bottleId} 号瓶子！
                          来自：{reader.GetString("username")}
                          日期：{reader.GetDateTime("created"):yyyy年MM月dd日}
                          """ +
@@ -112,7 +113,7 @@ public class PickDriftbottle : Command
                         $"\n\n{reader.GetString("content")}";
 
         await using MySqlCommand addViews = new MySqlCommand(
-            $"UPDATE driftbottles SET views = views + 1 WHERE id = {reader.GetInt32("id")}",
+            $"UPDATE driftbottles SET views = views + 1 WHERE id = {bottleId}",
             database);
         await reader.CloseAsync();
         addViews.ExecuteNonQuery();

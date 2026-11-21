@@ -1,4 +1,4 @@
-﻿using log4net;
+using log4net;
 using ZiYueBot.Core;
 
 namespace ZiYueBot.General;
@@ -24,7 +24,7 @@ public class Help : Command
     public override async Task Invoke(Context context, MessageChain arg)
     {
         Logger.Info(
-            $"平台：${context.Platform}，调用者：{context.UserName} ({context.UserId})，参数：{arg.Flatten()}");
+            $"平台：{context.Platform}，调用者：{context.UserName} ({context.UserId})，参数：{arg.Flatten()}");
         _ = UpdateInvokeRecords(context.UserId);
 
         if (!arg.IsEmpty())

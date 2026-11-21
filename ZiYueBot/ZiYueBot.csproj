@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -15,7 +15,7 @@
 
     <ItemGroup>
       <PackageReference Include="Discord.Net" Version="3.16.0" />
-      <PackageReference Include="log4net" Version="3.0.3-preview.1" />
+      <PackageReference Include="log4net" Version="3.6.0" />
       <PackageReference Include="MySql.Data" Version="9.1.0" />
       <PackageReference Include="SkiaSharp" Version="3.118.0-preview.1.2" />
       <PackageReference Include="Tencent.QCloud.Cos.Sdk" Version="5.4.51" />
@@ -43,6 +43,9 @@
       </None>
       <None Update="App.config">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="config.example.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="resources\zvv.jpeg">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>

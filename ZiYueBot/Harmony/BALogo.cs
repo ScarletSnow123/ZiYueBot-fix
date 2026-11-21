@@ -1,3 +1,4 @@
+using System.Text;
 using log4net;
 using SkiaSharp;
 using ZiYueBot.Core;
@@ -33,7 +34,21 @@ public class BaLogo : Command
             return;
         }
 
-        string[] args = context.Platform == Platform.QQ ? Parse(arg.ToString(context)) : [arg[0].ToString(context), arg[1].ToString(context)];
+        string[] args;
+        if (context.Platform == Platform.QQ)
+        {
+            args = Parse(arg.ToString(context));
+        }
+        else
+        {
+            if (arg.Count < 2)
+            {
+                await context.SendMessage("参数数量不足。使用“/help balogo”查看命令用法。");
+                return;
+            }
+
+            args = [arg[0].ToString(context), arg[1].ToString(context)];
+        }
 
         if (args.Length < 2)
         {
@@ -58,28 +73,34 @@ public class BaLogo : Command
     private static string[] Parse(string raw)
     {
         if (raw.Length == 0) return [""];
-        IList<string> args = [];
-        int pos = 0;
-        for (int i = pos; i < raw.Length; i++)
+
+        List<string> args = [];
+        StringBuilder current = new();
+        bool inQuotes = false;
+
+        foreach (char c in raw)
         {
-            switch (raw[i])
+            if (c == '"')
             {
-                case '"':
-                {
-                    int nextQuote = raw.IndexOf('"', i + 1);
-                    if (nextQuote == -1) nextQuote = raw.Length - 1;
-                    args.Add(raw.Substring(i + 1, nextQuote - i - 1));
-                    i = pos = nextQuote + 2;
-                    continue;
-                }
-                case ' ':
-                    args.Add(raw[pos..i]);
-                    pos = i + 1;
-                    break;
+                inQuotes = !inQuotes;
+                continue;
             }
+
+            if (char.IsWhiteSpace(c) && !inQuotes)
+            {
+                if (current.Length > 0)
+                {
+                    args.Add(current.ToString());
+                    current.Clear();
+                }
+
+                continue;
+            }
+
+            current.Append(c);
         }
 
-        if (pos < raw.Length) args.Add(raw[pos..]);
+        if (current.Length > 0 || inQuotes) args.Add(current.ToString());
         return [.. args];
     }
 

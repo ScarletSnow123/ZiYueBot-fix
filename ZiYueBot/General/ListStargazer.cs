@@ -11,7 +11,12 @@ public class ListStargazer : Command
     public override string Id => "查看星标云瓶";
     public override string Name => "查看星标云瓶";
     public override string Summary => "查看星标云瓶";
-    public override string Description => "";
+    public override string Description => """
+                                          /查看星标云瓶
+                                          查看你星标过的云瓶列表。
+                                          频率限制：QQ 群聊每次调用间隔 30 分钟，私聊间隔 10 分钟；Discord 每次调用间隔 10 分钟。
+                                          在线文档：https://docs.ziyuebot.cn/general/stargazer/index
+                                          """;
 
     public override async Task Invoke(Context context, MessageChain arg)
     {
@@ -35,7 +40,7 @@ public class ListStargazer : Command
         int count = 0;
         while (reader.Read())
         {
-            if (count <= 50)
+            if (count < 50)
                 result += $"- 云瓶：{reader.GetInt32("bottle_id")}，时间：{reader.GetDateTime("star_at"):yyyy-MM-dd}\n";
             count++;
         }

@@ -11,7 +11,11 @@ public class RemoveStargazer : Command
     public override string Id => "删除星标";
     public override string Name => "删除星标";
     public override string Summary => "删除星标";
-    public override string Description => "";
+    public override string Description => """
+                                          /删除星标 [id]
+                                          删除你对指定云瓶的星标。“id”是云瓶的数字编号。
+                                          在线文档：https://docs.ziyuebot.cn/general/stargazer/remove
+                                          """;
 
     public override async Task Invoke(Context context, MessageChain arg)
     {
@@ -33,6 +37,7 @@ public class RemoveStargazer : Command
         await using MySqlCommand command = new MySqlCommand(
             $"UPDATE stargazers SET removed = true WHERE userid = {context.UserId} AND bottle_id = {id}",
             ZiYueBot.Instance.ConnectDatabase());
+        await command.ExecuteNonQueryAsync();
         await context.SendMessage($"{id} 号云瓶的星标已删除！");
     }
 }

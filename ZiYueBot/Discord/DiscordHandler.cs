@@ -50,6 +50,7 @@ public static class DiscordHandler
         await CommandHelper.RegisterCommand(CommandHelper.EasyCommandBuilder(new About()));
         await CommandHelper.RegisterCommand(CommandHelper.EasyCommandBuilder(new Quotations()));
         await CommandHelper.RegisterCommand(CommandHelper.EasyCommandBuilder(new ListDriftbottle()));
+        await CommandHelper.RegisterCommand(CommandHelper.EasyCommandBuilder(new ListStargazer()));
         await CommandHelper.RegisterCommand(CommandHelper.EasyCommandBuilder(new PickStraitbottle()));
         await CommandHelper.RegisterCommand(CommandHelper.EasyCommandBuilder(new ListStraitbottle()));
         await CommandHelper.RegisterCommand(CommandHelper.EasyCommandBuilder(new StartRevolver()));
@@ -160,8 +161,24 @@ public static class DiscordHandler
         {
             SlashCommandBuilder builder = CommandHelper.EasyCommandBuilder(new FetchPenalty());
             SlashCommandOptionBuilder optionBuilder = new SlashCommandOptionBuilder();
-            optionBuilder.WithName("user").WithDescription("查询用户").WithRequired(true)
+            optionBuilder.WithName("user").WithDescription("查询用户").WithRequired(false)
                 .WithType(ApplicationCommandOptionType.User);
+            builder.AddOption(optionBuilder);
+            await CommandHelper.RegisterCommand(builder);
+        }
+        {
+            SlashCommandBuilder builder = CommandHelper.EasyCommandBuilder(new AddStargazer());
+            SlashCommandOptionBuilder optionBuilder = new SlashCommandOptionBuilder();
+            optionBuilder.WithName("id").WithDescription("云瓶编号").WithRequired(true)
+                .WithType(ApplicationCommandOptionType.Integer);
+            builder.AddOption(optionBuilder);
+            await CommandHelper.RegisterCommand(builder);
+        }
+        {
+            SlashCommandBuilder builder = CommandHelper.EasyCommandBuilder(new RemoveStargazer());
+            SlashCommandOptionBuilder optionBuilder = new SlashCommandOptionBuilder();
+            optionBuilder.WithName("id").WithDescription("云瓶编号").WithRequired(true)
+                .WithType(ApplicationCommandOptionType.Integer);
             builder.AddOption(optionBuilder);
             await CommandHelper.RegisterCommand(builder);
         }
@@ -173,7 +190,7 @@ public static class DiscordHandler
         {
             DiscordContext context =
                 new DiscordContext(command.GuildId is null ? EventType.DirectMessage : EventType.GroupMessage,
-                    command.User.GlobalName, command.User.Id, command);
+                    command.User.GlobalName ?? command.User.Username, command.User.Id, command);
 
             if (!Commands.TryGetCommand(Platform.Discord, command.CommandName, out Command? botCommand))
             {

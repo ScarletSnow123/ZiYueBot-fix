@@ -1,4 +1,4 @@
-﻿namespace ZiYueBot;
+namespace ZiYueBot;
 
 using System.Text;
 using log4net;
@@ -25,16 +25,16 @@ internal static class Program
         InitLogger();
         InitDirectories();
 
-        ZiYueBot bot = ZiYueBot.Create();
-
         try
         {
+            ZiYueBot bot = ZiYueBot.Create();
             await bot.StartAsync();
             await bot.WaitAsync();
         }
         catch (Exception e)
         {
             Logger.Fatal("主程序意外退出", e);
+            Environment.ExitCode = 1;
         }
     }
 }
