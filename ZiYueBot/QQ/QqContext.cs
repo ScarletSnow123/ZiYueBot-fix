@@ -135,6 +135,9 @@ public class QqContext(EventType eventType, string userName, ulong userId, uint 
         await ApiRequestLock.WaitAsync();
         try
         {
+            string echo = Guid.NewGuid().ToString("N");
+            json["echo"] = echo;
+
             Exception? lastError = null;
             for (int i = 0; i < 3; i++)
             {
@@ -147,11 +150,25 @@ public class QqContext(EventType eventType, string userName, ulong userId, uint 
                     await ZiYueBot.Instance.QqApi.SendAsync(payload, WebSocketMessageType.Text, true,
                         timeout.Token);
 
-                    string response = await ZiYueBot.Instance.QqApi.ReceiveTextMessageAsync(timeout.Token);
-                    JsonNode? node = JsonNode.Parse(response);
-                    if (node is not null) return node;
+                    while (true)
+                    {
+                        string response = await ZiYueBot.Instance.QqApi.ReceiveTextMessageAsync(timeout.Token);
+                        JsonNode? node = JsonNode.Parse(response);
+                        if (node is null)
+                        {
+                            lastError = new InvalidDataException("QQ API 空响应");
+                            break;
+                        }
 
-                    lastError = new InvalidDataException("QQ API 空响应");
+                        string? responseEcho = node["echo"]?.ToString();
+                        if (responseEcho == echo) return node;
+
+                        // Universal WebSocket 会推送事件；跳过事件，继续等待本次请求的响应。
+                        if (responseEcho is null && node["post_type"] is not null) continue;
+
+                        // 兼容不返回 echo 的实现。
+                        if (responseEcho is null) return node;
+                    }
                 }
                 catch (Exception e) when (e is WebSocketException or IOException or JsonException
                                               or InvalidOperationException or OperationCanceledException)

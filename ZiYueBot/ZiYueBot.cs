@@ -6,7 +6,9 @@ using log4net;
 using MySql.Data.MySqlClient;
 using System.Net;
 using System.Net.WebSockets;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ZiYueBot.Core;
 using ZiYueBot.Discord;
 using ZiYueBot.QQ;
@@ -104,10 +106,43 @@ public class ZiYueBot
             ConnectQqSocketAsync(QqEvent, Config.QqEventEndpoint),
             ConnectQqSocketAsync(QqApi, Config.QqApiEndpoint));
 
-        await QqApi.SendAsync("{\"action\": \"get_login_info\"}"u8.ToArray(),
+        string echo = Guid.NewGuid().ToString("N");
+        JsonObject request = new()
+        {
+            ["action"] = "get_login_info",
+            ["echo"] = echo
+        };
+
+        await QqApi.SendAsync(Encoding.UTF8.GetBytes(request.ToJsonString()),
             WebSocketMessageType.Text, true, CancellationToken.None);
 
-        string response = await QqApi.ReceiveTextMessageAsync();
+        string response;
+        using (CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30)))
+        {
+            while (true)
+            {
+                string payload = await QqApi.ReceiveTextMessageAsync(timeout.Token);
+                JsonNode? node = JsonNode.Parse(payload);
+                if (node is null) continue;
+
+                string? responseEcho = node["echo"]?.ToString();
+                if (responseEcho == echo)
+                {
+                    response = payload;
+                    break;
+                }
+
+                // Universal WebSocket 会先推送 lifecycle/meta_event 等事件，跳过它们。
+                if (responseEcho is null && node["post_type"] is not null) continue;
+
+                // 兼容不返回 echo 的实现。
+                if (responseEcho is null)
+                {
+                    response = payload;
+                    break;
+                }
+            }
+        }
 
         using JsonDocument qqUserInfoDocument = JsonDocument.Parse(response);
         JsonElement qqUserInfo = qqUserInfoDocument.RootElement;
