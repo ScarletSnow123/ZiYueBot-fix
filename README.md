@@ -27,7 +27,7 @@
 }
 ```
 
-`DiscordToken` 留空时不会登录 Discord，也不会初始化 Discord 消息处理，更不会要求配置 `DiscordProxy` 或 `HTTPS_PROXY`。如果需要 Discord，填入 Token；代理可填 `http://127.0.0.1:7890` 这样的地址，留空则依次读取 `HTTPS_PROXY`、`HTTP_PROXY`、`ALL_PROXY` 环境变量。
+`DiscordToken` 留空时不会登录 Discord，如果需要 Discord，填入 Token；代理可填 `http://127.0.0.1:7890` 这样的地址，留空则依次读取 `HTTPS_PROXY`、`HTTP_PROXY`、`ALL_PROXY` 环境变量
 
 ### 连接 SnowLuma
 
